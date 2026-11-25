@@ -61,7 +61,7 @@ input[type=number]:user-invalid { border-color: #ad433e; background: #fff3ed; }
 h1 { margin: .8rem 0 .55rem; font-size: clamp(2.55rem,4.7vw,4.25rem); font-weight: 740; line-height: .99; letter-spacing: -.065em; }
 h1 span { display: block; }
 h1 .accent { color: #83e4d6; }
-.hero p { max-width: 35rem; color: #c7dce1; line-height: 1.55; font-size: .99rem; }
+.hero p { max-width: 35rem; color: #c7dce1; line-height: 1.55; font-size: .99rem; text-wrap: balance; }
 .display-case { position: absolute; z-index: 0; width: 43%; right: 0; top: 0; bottom: 0; background: radial-gradient(ellipse at 56% 61%,#65dcdb26,transparent 55%); }
 .specimen { position: absolute; right: 10%; height: 95%; width: 80%; top: 2%; object-fit: contain; filter: drop-shadow(0 .65rem .65rem #06172670) saturate(1.18); }
 .specimen-shadow { position: absolute; left: 26%; right: 13%; height: 8%; bottom: 5%; border-radius: 50%; background: #0e232d; opacity: .5; filter: blur(.6rem); }

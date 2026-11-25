@@ -131,7 +131,6 @@ function readControls() {
     if (valid(id)) config[id] = getField(id);
     else allValid = false;
   }
-  if (allValid) savePrefs();
   return allValid;
 }
 
@@ -246,8 +245,7 @@ function drawPolicy() {
 function drawResults() {
   $("profit").textContent = result ? amount(result.estimate) : "—";
   $("profit").title = result ? coin(result.estimate) : "";
-  $("bounds").textContent = result ? t("modelRange") + " " + amount(result.low) + " – " + amount(result.high) : t(state === "waiting" ? "waiting" : "noSolution");
-  $("bounds").title = result ? number.format(result.low) + " – " + number.format(result.high) : "";
+  $("bounds").textContent = result ? t("modelRange") + " " + number.format(Math.floor(result.low)) + " – " + number.format(Math.ceil(result.high)) : t(state === "waiting" ? "waiting" : "noSolution");
   const best = model ? TARGETS.reduce((a, b) => prices.sell[b] / ITEMS[b].xp > prices.sell[a] / ITEMS[a].xp ? b : a) : null;
   $("top-target").textContent = best ? ITEMS[best][language] : "—";
   $("top-rate").textContent = best ? decimals.format(prices.sell[best] / ITEMS[best].xp) + " " + t("perXP") : "—";
@@ -262,13 +260,16 @@ function makePriceRows() {
     input.value = overrides[id] ?? "";
     const tr = row($("price-rows"), ["", "", "", "", "", "", input, ""]);
     priceRows.set(id, { tr, input });
-    input.addEventListener("change", () => {
-      if (!input.checkValidity()) { input.reportValidity(); calculate(); return; }
-      if (positive(input.valueAsNumber)) overrides[id] = input.valueAsNumber;
-      else { delete overrides[id]; input.value = ""; }
-      savePrefs(); calculate();
-    });
   }
+}
+function readOverrides() {
+  let valid = true;
+  for (const [id, { input }] of priceRows) {
+    if (!input.checkValidity()) { valid = false; continue; }
+    if (positive(input.valueAsNumber)) overrides[id] = input.valueAsNumber;
+    else delete overrides[id];
+  }
+  return valid;
 }
 function drawPrices() {
   const missing = brokenIds();
@@ -302,9 +303,10 @@ function cancel() {
 }
 function calculate(force = false) {
   const validSettings = readControls();
+  const validOverrides = readOverrides();
+  if (validSettings && validOverrides) savePrefs();
   prices = valueMarket(snapshot, overrides, config);
   drawPerks(); drawPrices(); drawFeed();
-  const validOverrides = [...priceRows.values()].every(({ input }) => input.checkValidity());
   if (!validSettings || !validOverrides || prices.missing.length) {
     cancel(); solveKey = ""; state = validSettings && validOverrides ? "missing" : "invalid";
     drawResults(); return;
@@ -381,6 +383,7 @@ for (const [id, fallback] of Object.entries(DEFAULTS)) {
   const value = saved.settings?.[id];
   setField(id, typeof value === typeof fallback ? value : fallback);
   if (!valid(id)) setField(id, fallback);
+  if ($(id).type === "number") $(id).addEventListener("input", () => calculate());
   $(id).addEventListener("change", () => calculate());
 }
 $("xp").value = xp; $("xp-range").value = xp;
@@ -398,6 +401,11 @@ for (const button of document.querySelectorAll("[data-lang]")) button.onclick = 
 $("refresh").onclick = refresh;
 $("recalculate").onclick = () => calculate(true);
 $("search").oninput = drawPrices; $("missing-only").onchange = drawPrices;
+$("price-rows").addEventListener("input", () => calculate());
+$("price-rows").addEventListener("change", ({ target }) => {
+  if (target.valueAsNumber === 0) target.value = "";
+  calculate();
+});
 
 makePriceRows(); readControls(); prices = valueMarket(snapshot, overrides, config);
 applyLanguage(); calculate(); refresh();
