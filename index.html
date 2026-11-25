@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>Glacite Lab · Frozen Corpse Optimizer</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1523;--panel:#142236;--line:#2a3d55;--muted:#a8b9cd;--ice:#7ee5ec;--good:#85e6ae;--bad:#ff9b9b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#1b3a50,var(--bg) 48%);font:15px/1.6 system-ui,sans-serif;color:#ecf5ff}main{max-width:1200px;margin:auto;padding:36px 20px 70px}header{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}h1{font-size:clamp(30px,5vw,51px);line-height:1.12;letter-spacing:-1.5px;margin:5px 0 12px}h2{font-size:20px;margin:0 0 13px}h3{font-size:16px;margin:0}p{margin:8px 0}.eyebrow{font-size:12px;letter-spacing:3px;color:var(--ice);font-weight:800}.muted,small{color:var(--muted)}a{color:var(--ice)}section,details{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:20px;margin-top:18px}button,select,input{font:inherit;border:1px solid #405873;border-radius:8px;background:#0c1929;color:inherit;padding:8px 10px;min-width:0}button{background:#76dce6;color:#09202c;font-weight:750;cursor:pointer}button:disabled{opacity:.45;cursor:wait}input[type=checkbox]{accent-color:#76dce6}input[type=number]{width:100%}label{display:grid;gap:5px;color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}.metric{padding:16px;background:#0d1b2b;border:1px solid var(--line);border-radius:12px}.big{font-size:29px;font-weight:750;letter-spacing:-.6px;font-variant-numeric:tabular-nums}.good{color:var(--good)}.bad{color:var(--bad)}.warning{color:#f7cc87}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;white-space:nowrap;font-variant-numeric:tabular-nums}th,td{text-align:right;padding:11px 9px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);font-weight:600}td:first-child,th:first-child{text-align:left}summary{cursor:pointer;font-weight:700}details p{color:var(--muted)}.status{border-left:3px solid var(--ice);padding-left:10px;margin:18px 0;overflow-wrap:anywhere}.track{height:18px;display:flex;border-radius:5px;overflow:hidden;background:#38475a}.segment{min-width:0;height:100%}.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin:10px 0}.swatch{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:2px}.policyrow{margin:15px 0}.policyrow strong{display:block;margin-bottom:6px}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}.priceInput{width:115px!important}.footer{margin-top:25px;font-size:13px;color:var(--muted)}#xp{width:100%}@media(max-width:600px){main{padding:20px 12px}section,details{padding:14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}th,td{padding:8px 6px}}
+</style></head><body><main>
+<header><div><div class="eyebrow">GLACITE LAB / ECONOMY</div><h1>Frozen Corpse Optimizer</h1><p class="muted">实时市场价格 × RNG Meter × 长期期望利润</p></div><button id="refresh">刷新市场价格</button></header>
+<div id="status" class="status" role="status" aria-live="polite">正在获取市场数据…</div>
+<section><h2>交易与模型设置</h2><div class="grid">
+<label>Bazaar 钥匙买入<select id="buy"><option value="instant">Instant Buy · 即买</option><option value="order">Buy Order · 挂买单</option></select></label>
+<label>Bazaar 掉落卖出<select id="sell"><option value="instant">Instant Sell · 即卖</option><option value="order">Sell Offer · 挂卖单</option></select></label>
+<label>Bazaar 卖出税 (%)<input id="bzTax" type="number" min="0" max="100" step=".125" value="1.125"></label>
+<label>AH 总费率估计 (%)<input id="ahTax" type="number" min="0" max="100" step=".1" value="3"></label>
+<label>Fairy Mineshaft 比例 (%)<input id="fairy" type="number" min="0" max="100" step=".1" value="8.6"></label>
+<label>Pity 额外 XP (%)<input id="pity" type="number" min="0" max="10" step="1" value="10"></label>
+<label>Vanguard 胸甲未知权重<input id="chest" type="number" min="0" max="10000" step="1" value="0"></label>
+<label>保底适用范围<select id="guarantee"><option value="pool">仅目标所在奖池（保守）</option><option value="any">任意尸体（待实测）</option></select></label>
+<label class="check"><input type="checkbox" id="lock" checked> 已锁定全部 5 种 Crystal</label>
+<label class="check"><input type="checkbox" id="auto" checked> 每 60 秒自动刷新</label>
+</div><p class="muted"><small>固定满级：Resourceful V、Gifts 101、Dead Man's Chest 51、Milestone VII、Blue Cheese；额外 Roll 40.2%，钥匙消耗率 95%。挂单按当前最优价估算，不保证成交。</small></p><button id="calculate">重新求解</button></section>
+<section><h2>当前 RNG XP</h2><div class="grid"><label>输入共享 Meter XP<input type="number" id="xp" min="0" max="5050000" step="1" value="0"></label><label>拖动选择 XP<input type="range" id="range" min="0" max="5050000" step="2500" value="0"></label></div><div class="metrics"><div class="metric"><small>每个 Mineshaft 长期净利润</small><div class="big" id="average">—</div><small id="bounds">等待求解</small></div><div class="metric"><small>当前 XP 对应的最优操作</small><div class="big" id="xpDisplay">0 XP</div><small>四种尸体分别决策</small></div><div class="metric"><small>最高保底兑换价值</small><div class="big" id="top">—</div><small id="topDetail">Coins / XP（非单独优化结果）</small></div></div>
+<div class="tablewrap"><table><thead><tr><th>尸体</th><th>基础掉落</th><th>钥匙成本</th><th>基础利润</th><th>含 XP 开启边际价值</th><th>最佳操作 / RNG</th><th>XP</th></tr></thead><tbody id="result"></tbody></table></div><p class="muted"><small>边际价值 = 最优开启行动的即时收益 + 未来状态价值 − 跳过价值。不是当次实际现金收入。</small></p></section>
+<section><h2>完整 RNG 策略图</h2><p class="muted">从 0 到 5,050,000 XP，每种颜色表示对应尸体的最优操作。悬停查看区间；下方表格列出全部切换点。</p><div id="chart"></div><div id="legend" class="legend"></div><details><summary>查看精确网格区间</summary><div class="tablewrap"><table><thead><tr><th>尸体</th><th>起始 XP</th><th>结束 XP（含）</th><th>操作</th></tr></thead><tbody id="intervals"></tbody></table></div></details></section>
+<details open><summary>市场价格明细 / 手动覆盖</summary><p>所有可交易掉落与钥匙逐项获取；NPC 保底价格自动比较。AH 使用最低 BIN 报价估计（不是成交价）；手动覆盖使用 Coins 单价，适用于买入和卖出，仍计税。缺失的必要价格会阻止求解。</p><div class="tablewrap"><table><thead><tr><th>物品</th><th>即买 / 卖单</th><th>即卖 / 买单</th><th>AH 最低 BIN</th><th>NPC</th><th>采用净卖价</th><th>覆盖价</th><th>来源</th></tr></thead><tbody id="prices"></tbody></table></div></details>
+<details><summary>计算方法与限制</summary><p>使用共享 XP 的离散状态平均收益动态规划：每次观察到尸体类型，可跳过、无选择开启或选择一个 RNG 目标。自然掉落以完整均匀 Roll 分布计算至少一次命中率；选中权重随进度上升至三倍，重新归一化。未满保底命中假设整具尸体结算后清零；保底占一次 Roll，扣除目标 XP 后加本次 XP。多数量掉落按各 bundle 权重计算，保底给一件。Dye 独立替换 Roll，其权重倍率以赔率缩放近似。</p><p>XP 采用 2,500 网格、线性插值，5,050,000 封顶；平均收益区间来自 Bellman 残差，针对离散模型而非游戏真实误差。尸体独立按期望生成频率抽样，不模拟同一矿洞内的顺序、访问时间、挖矿收益、资金限制、实际成交滑点或风险。普通矿洞期望 2.955 具，Fairy 只有 Vanguard；8.6% 只是可调场景默认值。Crystal 未锁定时按零金币奖励保留其权重，不模拟逐步集齐；水晶不是 RNG 选择目标（纯金币收益下排除）。Wiki 未知 Vanguard 胸甲权重，默认忽略；其他机制不确定处请实测后调整。</p><p>来源：<a href="https://hypixelskyblock.minecraft.wiki/w/Frozen_Corpses">Frozen Corpses Wiki</a> · <a href="https://hypixelskyblock.minecraft.wiki/w/RNG_Meter">RNG Meter Wiki</a> · <a href="https://api.hypixel.net/">Hypixel API</a> · <a href="https://github.com/SkyHelperBot/Prices">SkyHelper AH 价格</a> · <a href="https://sky.coflnet.com/wiki/api">Coflnet API</a>。Wiki 中 Tungsten/Umber 的表头总权重存在不一致，本页按各行求和（未锁定 6640，锁定 6440）。</p></details>
+<div class="footer">Glacite Lab · Independent fan project · 不属于 Hypixel 官方。价格与计算均为估计。</div>
+</main><script>
+"use strict";
+const DATA={"items":{"BEJEWELED_HANDLE":{"name":"Bejeweled Handle","xp":0,"market":"BZ","npc":0},"GLACITE_AMALGAMATION":{"name":"Glacite Amalgamation","xp":60000,"market":"BZ","npc":0},"REFINED_TUNGSTEN":{"name":"Refined Tungsten","xp":60000,"market":"BZ","npc":0},"REFINED_UMBER":{"name":"Refined Umber","xp":60000,"market":"BZ","npc":0},"TUNGSTEN_KEY":{"name":"Tungsten Key","xp":100000,"market":"BZ","npc":0},"UMBER_KEY":{"name":"Umber Key","xp":100000,"market":"BZ","npc":0},"SKELETON_KEY":{"name":"Skeleton Key","xp":1250000,"market":"BZ","npc":0},"MITHRIL_PLATE":{"name":"Mithril Plate","xp":150000,"market":"BZ","npc":0},"TUNGSTEN_PLATE":{"name":"Tungsten Plate","xp":300000,"market":"BZ","npc":0},"UMBER_PLATE":{"name":"Umber Plate","xp":300000,"market":"BZ","npc":0},"FROZEN_SCUTE":{"name":"Frozen Scute","xp":750000,"market":"BZ","npc":5000000},"CAGED_WISP":{"name":"Caged Wisp","xp":1250000,"market":"AH","npc":0},"SHATTERED_PENDANT":{"name":"Shattered Locket","xp":2500000,"market":"AH","npc":5000000},"DYE_FROSTBITTEN":{"name":"Frostbitten Dye","xp":5000000,"market":"AH","npc":0},"DEAD_MANS_CHESTPLATE":{"name":"Dead Man's Chestplate","xp":12000,"market":"AH","npc":0},"ENCHANTMENT_ICE_COLD_1":{"name":"Ice Cold I","xp":60000,"market":"BZ","npc":0},"DWARVEN_OS_METALLIC_MINIS":{"name":"Dwarven O's Metallic Minis","xp":75000,"market":"BZ","npc":0},"GOBLIN_EGG_BLUE":{"name":"Blue Goblin Egg","xp":60000,"market":"BZ","npc":0},"SUSPICIOUS_SCRAP":{"name":"Suspicious Scrap","xp":0,"market":"BZ","npc":0},"GLACITE_JEWEL":{"name":"Glacite Jewel","xp":0,"market":"BZ","npc":0},"GOBLIN_EGG":{"name":"Goblin Egg","xp":0,"market":"BZ","npc":0},"ENCHANTED_GLACITE":{"name":"Enchanted Glacite","xp":0,"market":"BZ","npc":0},"ENCHANTED_TUNGSTEN":{"name":"Enchanted Tungsten","xp":0,"market":"BZ","npc":0},"ENCHANTED_UMBER":{"name":"Enchanted Umber","xp":0,"market":"BZ","npc":0},"GOBLIN_EGG_GREEN":{"name":"Green Goblin Egg","xp":0,"market":"BZ","npc":0},"GOBLIN_EGG_RED":{"name":"Red Goblin Egg","xp":0,"market":"BZ","npc":0},"GOBLIN_EGG_YELLOW":{"name":"Yellow Goblin Egg","xp":0,"market":"BZ","npc":0},"FINE_AQUAMARINE_GEM":{"name":"Fine Aquamarine Gemstone","xp":0,"market":"BZ","npc":0},"FINE_CITRINE_GEM":{"name":"Fine Citrine Gemstone","xp":0,"market":"BZ","npc":0},"FINE_ONYX_GEM":{"name":"Fine Onyx Gemstone","xp":0,"market":"BZ","npc":0},"FINE_PERIDOT_GEM":{"name":"Fine Peridot Gemstone","xp":0,"market":"BZ","npc":0},"FLAWED_AQUAMARINE_GEM":{"name":"Flawed Aquamarine Gemstone","xp":0,"market":"BZ","npc":0},"FLAWED_CITRINE_GEM":{"name":"Flawed Citrine Gemstone","xp":0,"market":"BZ","npc":0},"FLAWED_ONYX_GEM":{"name":"Flawed Onyx Gemstone","xp":0,"market":"BZ","npc":0},"FLAWED_PERIDOT_GEM":{"name":"Flawed Peridot Gemstone","xp":0,"market":"BZ","npc":0},"FLAWLESS_AQUAMARINE_GEM":{"name":"Flawless Aquamarine Gemstone","xp":60000,"market":"BZ","npc":0},"FLAWLESS_CITRINE_GEM":{"name":"Flawless Citrine Gemstone","xp":60000,"market":"BZ","npc":0},"FLAWLESS_ONYX_GEM":{"name":"Flawless Onyx Gemstone","xp":60000,"market":"BZ","npc":0},"FLAWLESS_PERIDOT_GEM":{"name":"Flawless Peridot Gemstone","xp":60000,"market":"BZ","npc":0}},"pools":[[["BEJEWELED_HANDLE",25,4],["GLACITE_AMALGAMATION",25,1],["REFINED_TUNGSTEN",25,1],["REFINED_UMBER",25,1],["TUNGSTEN_KEY",25,1],["UMBER_KEY",25,1],["BEJEWELED_HANDLE",50,2],["BEJEWELED_HANDLE",100,1],["ENCHANTED_GLACITE",125,4],["ENCHANTED_TUNGSTEN",125,4],["ENCHANTED_UMBER",125,4],["ENCHANTED_GLACITE",250,2],["ENCHANTED_TUNGSTEN",250,2],["ENCHANTED_UMBER",250,2],["ENCHANTED_GLACITE",500,1],["ENCHANTED_TUNGSTEN",500,1],["ENCHANTED_UMBER",500,1],["FINE_AQUAMARINE_GEM",125,2],["FINE_CITRINE_GEM",125,2],["FINE_ONYX_GEM",125,2],["FLAWED_PERIDOT_GEM",125,2],["FINE_AQUAMARINE_GEM",250,1],["FINE_CITRINE_GEM",250,1],["FINE_ONYX_GEM",250,1],["FLAWED_PERIDOT_GEM",250,1],["GOBLIN_EGG_GREEN",175,4],["GOBLIN_EGG_RED",175,4],["GOBLIN_EGG_YELLOW",175,4],["GOBLIN_EGG_GREEN",350,2],["GOBLIN_EGG_RED",350,2],["GOBLIN_EGG_YELLOW",350,2],["GOBLIN_EGG_GREEN",700,1],["GOBLIN_EGG_RED",700,1],["GOBLIN_EGG_YELLOW",700,1],["GOBLIN_EGG",200,4],["GOBLIN_EGG",400,2],["GOBLIN_EGG",800,1],["GLACITE_JEWEL",250,2],["GLACITE_JEWEL",500,1],["SUSPICIOUS_SCRAP",500,1],["FLAWED_AQUAMARINE_GEM",500,40],["FLAWED_CITRINE_GEM",500,40],["FLAWED_ONYX_GEM",500,40],["FLAWED_PERIDOT_GEM",500,40],["FLAWED_AQUAMARINE_GEM",1000,20],["FLAWED_CITRINE_GEM",1000,20],["FLAWED_ONYX_GEM",1000,20],["FLAWED_PERIDOT_GEM",1000,20]],[["CAGED_WISP",2,1],["FROZEN_SCUTE",4,1],["SKELETON_KEY",4,1],["TUNGSTEN_PLATE",5,1],["UMBER_PLATE",5,1],["MITHRIL_PLATE",10,1],["TUNGSTEN_KEY",10,1],["UMBER_KEY",10,1],["DWARVEN_OS_METALLIC_MINIS",20,1],["GLACITE_AMALGAMATION",20,1],["REFINED_TUNGSTEN",20,1],["REFINED_UMBER",20,1],["FLAWLESS_AQUAMARINE_GEM",25,1],["FLAWLESS_CITRINE_GEM",25,1],["FLAWLESS_ONYX_GEM",25,1],["FLAWLESS_PERIDOT_GEM",25,1],["GOBLIN_EGG_BLUE",80,1],["ENCHANTMENT_ICE_COLD_1",80,1],["DEAD_MANS_CHESTPLATE",100,1],["FINE_AQUAMARINE_GEM",175,16],["FINE_CITRINE_GEM",175,16],["FINE_ONYX_GEM",175,16],["FINE_PERIDOT_GEM",175,16],["FINE_AQUAMARINE_GEM",350,8],["FINE_CITRINE_GEM",350,8],["FINE_ONYX_GEM",350,8],["FINE_PERIDOT_GEM",350,8],["FINE_AQUAMARINE_GEM",700,4],["FINE_CITRINE_GEM",700,4],["FINE_ONYX_GEM",700,4],["FINE_PERIDOT_GEM",700,4],["SUSPICIOUS_SCRAP",350,4],["SUSPICIOUS_SCRAP",700,2]],[["CAGED_WISP",2,1],["FROZEN_SCUTE",4,1],["SKELETON_KEY",4,1],["TUNGSTEN_PLATE",5,1],["UMBER_PLATE",5,1],["MITHRIL_PLATE",10,1],["TUNGSTEN_KEY",10,1],["UMBER_KEY",10,1],["DWARVEN_OS_METALLIC_MINIS",20,1],["GLACITE_AMALGAMATION",20,1],["REFINED_TUNGSTEN",20,1],["REFINED_UMBER",20,1],["FLAWLESS_AQUAMARINE_GEM",25,1],["FLAWLESS_CITRINE_GEM",25,1],["FLAWLESS_ONYX_GEM",25,1],["FLAWLESS_PERIDOT_GEM",25,1],["GOBLIN_EGG_BLUE",80,1],["ENCHANTMENT_ICE_COLD_1",80,1],["DEAD_MANS_CHESTPLATE",100,1],["FINE_AQUAMARINE_GEM",175,16],["FINE_CITRINE_GEM",175,16],["FINE_ONYX_GEM",175,16],["FINE_PERIDOT_GEM",175,16],["FINE_AQUAMARINE_GEM",350,8],["FINE_CITRINE_GEM",350,8],["FINE_ONYX_GEM",350,8],["FINE_PERIDOT_GEM",350,8],["FINE_AQUAMARINE_GEM",700,4],["FINE_CITRINE_GEM",700,4],["FINE_ONYX_GEM",700,4],["FINE_PERIDOT_GEM",700,4],["SUSPICIOUS_SCRAP",350,4],["SUSPICIOUS_SCRAP",700,2]],[["SHATTERED_PENDANT",5,1],["CAGED_WISP",10,1],["FROZEN_SCUTE",10,1],["SKELETON_KEY",10,1],["TUNGSTEN_KEY",20,4],["UMBER_KEY",20,4],["TUNGSTEN_PLATE",30,1],["UMBER_PLATE",30,1],["GLACITE_AMALGAMATION",40,4],["TUNGSTEN_KEY",40,2],["UMBER_KEY",40,2],["MITHRIL_PLATE",60,1],["GOBLIN_EGG_BLUE",80,2],["FLAWLESS_AQUAMARINE_GEM",80,2],["FLAWLESS_CITRINE_GEM",80,2],["FLAWLESS_ONYX_GEM",80,2],["FLAWLESS_PERIDOT_GEM",80,2],["GLACITE_AMALGAMATION",80,2],["REFINED_TUNGSTEN",80,2],["REFINED_UMBER",80,2],["SUSPICIOUS_SCRAP",80,16],["TUNGSTEN_KEY",80,1],["UMBER_KEY",80,1],["DWARVEN_OS_METALLIC_MINIS",120,1],["GOBLIN_EGG_BLUE",160,1],["ENCHANTMENT_ICE_COLD_1",160,1],["FLAWLESS_AQUAMARINE_GEM",160,1],["FLAWLESS_CITRINE_GEM",160,1],["FLAWLESS_ONYX_GEM",160,1],["FLAWLESS_PERIDOT_GEM",160,1],["GLACITE_AMALGAMATION",160,1],["REFINED_TUNGSTEN",160,1],["REFINED_UMBER",160,1],["SUSPICIOUS_SCRAP",160,8]]]};
+const solver=function solver(input,notify=()=>{}){
+ const {items,pools,sell,buy,settings:s}=input,step=s.step||2500,max=5000000+50000,N=Math.ceil(max/step)+1;
+ const names=["Lapis","Tungsten","Umber","Vanguard"], xps=[500,2500,2500,25000].map(x=>x*(1+s.pity/100)), mins=[3,4,4,5], dye=[.000004,.00004,.00004,.0001], keys=[null,"TUNGSTEN_KEY","UMBER_KEY","SKELETON_KEY"], dyeId="DYE_FROSTBITTEN", extra=.402;
+ const count=(1-s.fairy)*2.955+s.fairy, freq=[(1-s.fairy)*2.955/2,(1-s.fairy)*2.955/4,(1-s.fairy)*2.955/4,s.fairy].map(x=>x/count);
+ const targets=Object.keys(items).filter(k=>items[k].xp), models=[];
+ const val=(h,x)=>{let z=Math.max(0,Math.min(N-1,x/step)),j=Math.floor(z);return h[j]+(h[Math.min(j+1,N-1)]-h[j])*(z-j)};
+ for(let c=0;c<4;c++){
+   let rows=pools[c].map(r=>r.slice());if(c===3&&s.chest>0)rows.push(["DEAD_MANS_CHESTPLATE",s.chest,1]);
+   const W=rows.reduce((t,r)=>t+r[1],0)+(s.lock?0:c===0?0:c===3?600:200);
+   let normal=rows.reduce((t,[id,w,n])=>t+w*n*sell[id],0)/W;
+   const baseRoll=(1-dye[c])*normal+dye[c]*sell[dyeId], rolls=mins[c]+1.5+extra;
+   const cost=keys[c]?buy[keys[c]]*.95:0, base=rolls*baseRoll-cost;
+   const actions=[{id:"skip",r:0},{id:"none",r:base}];
+   for(const id of targets){
+     const w=rows.filter(r=>r[0]===id).reduce((t,r)=>t+r[1],0), isDye=id===dyeId, eligible=w>0||isDye;
+     if(!eligible&&!s.any)continue;
+     const b=eligible?(isDye?dye[c]:(1-dye[c])*w/W):0;
+     const weighted= w?rows.filter(r=>r[0]===id).reduce((t,r)=>t+r[1]*r[2]*sell[id],0)/w:sell[id];
+     const T=items[id].xp, p=new Float64Array(N), reward=new Float64Array(N), guarantee=new Uint8Array(N);
+     for(let i=0;i<N;i++){
+       const x=i*step;
+       if(x>=T&&(eligible||s.any)){
+         guarantee[i]=1;
+         reward[i]=base+sell[id]-baseRoll;
+       }else if(eligible){
+         const f=1+Math.min(2*x/T,2);
+         const boosted=isDye?b*f/(1+b*(f-1)):(1-dye[c])*w*f/(W+w*(f-1));
+         const other=isDye?normal:(normal-w/W*weighted)/(1-w/W);
+         const q=1-boosted;
+         let miss=0;for(let n=mins[c];n<=mins[c]+3;n++)miss+=(.598*Math.pow(q,n)+.402*Math.pow(q,n+1))/4;
+         p[i]=1-miss;
+         reward[i]=base+rolls*(boosted-b)*(weighted-other);
+       }else reward[i]=base;
+     }
+     actions.push({id,T,p,reward,guarantee});
+   }
+   models.push({actions,base,cost,loot:base+cost,xp:xps[c],W,rolls});
+ }
+ let H=new Float64Array(N),B=new Float64Array(N);
+ // Warm start; relative value iteration, laziness suppresses periodic cycles.
+ const rate=Math.max(...targets.map(k=>sell[k]/items[k].xp),0);
+ for(let i=0;i<N;i++)H[i]=i*step*rate*.6;
+ const policy=models.map(()=>new Uint8Array(N)), advantage=models.map(()=>new Float64Array(N)), cash=models.map(()=>new Float64Array(N));
+ let low=0,high=Infinity,iteration=0;
+ function sweep(write){
+   let mn=Infinity,mx=-Infinity;
+   for(let i=0;i<N;i++){
+     const x=i*step,old=H[i];let total=0;
+     for(let c=0;c<4;c++){
+       const m=models[c],next=val(H,x+m.xp),reset=0;
+       let best=old, bestI=0,bestR=0,openBest=-Infinity;
+       for(let j=1;j<m.actions.length;j++){
+         const a=m.actions[j];let r,v;
+         if(j===1){r=m.base;v=r+next;}
+         else if(a.guarantee[i]){r=a.reward[i];v=r+val(H,x-a.T+m.xp);}
+         else {r=a.reward[i];v=r+(1-a.p[i])*next+a.p[i]*reset;}
+         if(v>openBest)openBest=v;
+         if(v>best){best=v;bestI=j;bestR=r;}
+       }
+       total+=freq[c]*best;
+       if(write){policy[c][i]=bestI;advantage[c][i]=openBest-old;cash[c][i]=bestR;}
+     }
+     const d=total-old;mn=Math.min(mn,d);mx=Math.max(mx,d);B[i]=old+.85*d;
+   }
+   return [mn,mx];
+ }
+ const maxIter=s.iterations||3500;
+ for(iteration=0;iteration<maxIter;iteration++){
+   [low,high]=sweep(false);const z=B[0];for(let i=0;i<N;i++)B[i]-=z;
+   [H,B]=[B,H];
+   if(iteration%250===0)notify({iteration,gap:(high-low)*count});
+   if(high-low<.0008)break;
+ }
+ [low,high]=sweep(true);
+ return {step,iteration:iteration+1,low:low*count,high:high*count,estimate:(low+high)/2*count,
+   models:models.map((m,c)=>({name:names[c],base:m.base,cost:m.cost,loot:m.loot,xp:m.xp,W:m.W,rolls:m.rolls,
+   actions:m.actions.map(a=>a.id),policy:Array.from(policy[c]),advantage:Array.from(advantage[c]),cash:Array.from(cash[c])})),freq,count};
+};
+const $=id=>document.getElementById(id), fmt=x=>Number.isFinite(x)?(Math.abs(x)>=1000000?(x/1000000).toFixed(3)+"M":Math.round(x).toLocaleString("en-US")):"—", num=id=>Number($(id).value), pos=x=>typeof x==="number"&&Number.isFinite(x)&&x>0;
+let quotes={},overrides={},solution=null,worker=null,refreshing=false,marketReady=false,stamp="",seq=0;
+const sourceNames={BZ:"Hypixel Bazaar",AH:"SkyHelper / Coflnet"};
+const name=id=>id==="skip"?"跳过":id==="none"?"开启 · 不选 RNG":"开启 · "+DATA.items[id].name;
+const colors=["#52627a","#39a7b5","#d7b46b","#c99df4","#8ce6a8","#f7a3aa","#80b5ff","#eb9863","#9ac8ba","#c6ca82"];
+const color=id=>id==="skip"?colors[0]:id==="none"?colors[1]:colors[2+(Object.keys(DATA.items).indexOf(id)%8)];
+function el(tag,txt,cls){const x=document.createElement(tag);if(txt!==undefined)x.textContent=txt;if(cls)x.className=cls;return x}
+function cells(body,values){const row=el("tr");for(const v of values)row.append(v instanceof Node?v:el("td",String(v)));body.append(row);return row}
+async function json(url){const r=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error(r.status+" "+url);return r.json()}
+function bestPrice(rows,side){const nums=(rows||[]).filter(x=>x.amount>0&&pos(x.pricePerUnit)).map(x=>x.pricePerUnit);return nums.length?(side==="ask"?Math.min(...nums):Math.max(...nums)):null}
+function quoteBZ(product){return {ask:bestPrice(product.buy_summary,"ask"),bid:bestPrice(product.sell_summary,"bid"),source:"Hypixel Bazaar"}}
+function settings(){return {pity:num("pity"),fairy:num("fairy")/100,chest:num("chest"),lock:$("lock").checked,any:$("guarantee").value==="any",bzTax:num("bzTax")/100,ahTax:num("ahTax")/100}}
+function validSettings(){return ["pity","fairy","chest","bzTax","ahTax"].every(id=>$(id).value!==""&&$(id).checkValidity())}
+function values(){const s=settings(),sell={},buy={},missing=[];for(const [id,it] of Object.entries(DATA.items)){
+ const q=quotes[id]||{},manual=overrides[id],bz=q.source==="Hypixel Bazaar"||it.market==="BZ"&&!q.ah;
+ const rawBuy=pos(manual)?manual:bz?q[$("buy").value==="instant"?"ask":"bid"]:q.ah;
+ const rawSell=pos(manual)?manual:bz?q[$("sell").value==="instant"?"bid":"ask"]:q.ah;
+ const npc=q.npc||it.npc||0;
+ buy[id]=pos(rawBuy)?rawBuy/1e6:NaN;
+ sell[id]=Math.max(pos(rawSell)?rawSell*(1-(bz?s.bzTax:s.ahTax)):0,npc)/1e6;
+ if(!pos(rawSell)&&!npc)missing.push(it.name+" 卖价");
+ if(["TUNGSTEN_KEY","UMBER_KEY","SKELETON_KEY"].includes(id)&&!pos(rawBuy))missing.push(it.name+" 买价");
+ }return {sell,buy,missing}}
+function renderPrices(){const b=$("prices");b.replaceChildren();const v=values();for(const [id,it] of Object.entries(DATA.items)){
+ const q=quotes[id]||{},input=el("input");input.type="number";input.min="0";input.step="any";input.placeholder="自动";input.className="priceInput";input.setAttribute("aria-label",it.name+" 手动覆盖价格");input.value=overrides[id]||"";input.addEventListener("change",()=>{if(pos(+input.value))overrides[id]=+input.value;else delete overrides[id];run()});
+ const cell=el("td");cell.append(input);const row=cells(b,[it.name,fmt(q.ask),fmt(q.bid),fmt(q.ah),fmt(q.npc||it.npc||NaN),fmt(v.sell[id]*1e6),cell,overrides[id]?"手动":q.source||"未获取"]);if(!v.sell[id])row.className="warning";
+ }}
+function status(s,warning=false){$("status").textContent=s;$("status").className="status"+(warning?" warning":"")}
+async function refresh(){
+ if(refreshing)return;refreshing=true;$("refresh").disabled=true;status("正在获取 Bazaar、AH 和 NPC 价格…");stop();
+ try{
+ const [bz,ah,catalog]=await Promise.allSettled([json("https://api.hypixel.net/v2/skyblock/bazaar"),json("https://raw.githubusercontent.com/SkyHelperBot/Prices/main/prices.json"),json("https://api.hypixel.net/v2/resources/skyblock/items")]);
+ const prod=bz.status==="fulfilled"&&bz.value.success?bz.value.products:null;
+ const map=ah.status==="fulfilled"?ah.value:{};
+ const info=catalog.status==="fulfilled"?catalog.value.items||[]:[];
+ const byId=Object.fromEntries(info.map(x=>[x.id,x]));
+ const next={};const pending=[];
+ for(const [id,it] of Object.entries(DATA.items)){
+   const itemInfo=byId[id]||info.find(x=>x.name?.replace(/§./g,"")===it.name);
+   const actual=itemInfo?.id||id;
+   const npc=Math.max(it.npc||0,Number(itemInfo?.npc_sell_price)||0);
+   const p=prod?.[id]||prod?.[actual];if(p){next[id]={...quoteBZ(p),npc};continue}
+   if(it.market==="BZ"){next[id]={npc,source:"Bazaar 缺失"};continue}
+   const price=map[id.toLowerCase()]??map[actual.toLowerCase()]??map[id];
+   if(pos(price)){next[id]={ah:price,npc,source:"SkyHelper AH"};continue}
+   next[id]={npc,source:"AH 缺失"};
+   pending.push((async()=>{try{const d=await json("https://sky.coflnet.com/api/item/price/"+encodeURIComponent(actual)+"/bin");const p=typeof d==="number"?d:d.lowestBin??d.price;if(pos(p))next[id]={ah:p,npc,source:"Coflnet AH"};}catch{}})());
+ }
+ await Promise.allSettled(pending);quotes=next;marketReady=true;
+ const date=prod&&bz.value.lastUpdated?new Date(bz.value.lastUpdated):null;
+ stamp="Bazaar "+(date?date.toLocaleString():"不可用")+" · AH 获取于 "+new Date().toLocaleTimeString()+"（上游缓存）";
+ if(date&&Date.now()-date.getTime()>300000)stamp+=" · Bazaar 数据超过 5 分钟";
+ if(!prod)stamp+=" · Bazaar 请求失败";
+ renderPrices();run();
+ }catch(e){marketReady=false;status("刷新失败："+e.message,true);renderPrices()}
+ finally{refreshing=false;$("refresh").disabled=false;}
+}
+function stop(){seq++;if(worker){worker.terminate();worker=null}solution=null;$("average").textContent="—";$("bounds").textContent="等待求解";$("result").replaceChildren();$("chart").replaceChildren();$("legend").replaceChildren();$("intervals").replaceChildren();$("top").textContent="—";$("topDetail").textContent="Coins / XP（非单独优化结果）"}
+function run(){
+ stop();renderPrices();if(!validSettings()){status("设置超出有效范围。",true);return}
+ const {sell,buy,missing}=values();if(!marketReady){status("尚未获得市场快照。请刷新价格。",true);return}
+ if(missing.length){status(stamp+" · 缺失价格："+missing.join("、")+"。请刷新或手动覆盖。",true);return}
+ const ranked=Object.keys(DATA.items).filter(k=>DATA.items[k].xp).sort((a,b)=>sell[b]/DATA.items[b].xp-sell[a]/DATA.items[a].xp);
+ $("top").textContent=DATA.items[ranked[0]].name;$("topDetail").textContent=(sell[ranked[0]]*1e6/DATA.items[ranked[0]].xp).toFixed(1)+" Coins / XP";
+ const input={...DATA,sell,buy,settings:settings()},token=seq;
+ status(stamp+" · 正在求解最优策略…");
+ try{
+ const script="const solver="+solver.toString()+";onmessage=e=>{try{const r=solver(e.data,p=>postMessage({progress:p}));postMessage({result:r})}catch(err){postMessage({error:String(err)})}};";
+ const url=URL.createObjectURL(new Blob([script],{type:"text/javascript"}));worker=new Worker(url);URL.revokeObjectURL(url);
+ worker.onmessage=e=>{if(token!==seq)return;const d=e.data;if(d.progress){status(stamp+" · 求解迭代 "+d.progress.iteration+"，离散收益区间宽度 "+fmt(d.progress.gap*1e6));return}if(d.error){status("求解失败："+d.error,true);return}solution=d.result;worker.terminate();worker=null;renderSolution();status(stamp+" · 已重新计算"+(solution.high-solution.low>.01?" · 未达到目标收敛精度，结果为近似":"")+(Object.keys(overrides).length?" · 含手动覆盖价":""),solution.high-solution.low>.01||stamp.includes("超过")||stamp.includes("失败"));};
+ worker.onerror=e=>{if(token===seq)status("计算线程失败："+e.message,true)};
+ worker.postMessage(input);
+ }catch(e){status("无法启动计算线程："+e.message,true)}
+}
+function renderCurrent(){const x=Math.max(0,Math.min(5050000,num("xp")||0));$("xpDisplay").textContent=Math.round(x).toLocaleString()+" XP";if(!solution)return;
+ const b=$("result");b.replaceChildren();for(const m of solution.models){const i=Math.min(m.policy.length-1,Math.round(x/solution.step)),id=m.actions[m.policy[i]];
+ const row=cells(b,[m.name,fmt(m.loot*1e6),fmt(m.cost*1e6),fmt(m.base*1e6),fmt(m.advantage[i]*1e6),name(id),m.xp.toLocaleString()]);row.children[3].className=m.base>=0?"good":"bad";row.children[4].className=m.advantage[i]>=0?"good":"bad";row.children[5].className=id==="skip"?"bad":"good";}}
+function renderSolution(){const s=solution;$("average").textContent=fmt(s.estimate*1e6);$("average").className="big "+(s.estimate>=0?"good":"bad");$("bounds").textContent="离散模型区间 "+fmt(s.low*1e6)+" – "+fmt(s.high*1e6)+" · "+s.iteration+" 次迭代";renderCurrent();
+ const chart=$("chart"),table=$("intervals"),legend=$("legend"),used=new Set();chart.replaceChildren();table.replaceChildren();legend.replaceChildren();
+ for(const m of s.models){const wrap=el("div",undefined,"policyrow"),track=el("div",undefined,"track");wrap.append(el("strong",m.name),track);chart.append(wrap);
+ let start=0;for(let i=1;i<=m.policy.length;i++){if(i<m.policy.length&&m.policy[i]===m.policy[start])continue;const id=m.actions[m.policy[start]],seg=el("div",undefined,"segment");seg.style.background=color(id);seg.style.flexBasis=(100*(i-start)/m.policy.length)+"%";seg.title=start*s.step+"–"+(i-1)*s.step+" XP: "+name(id);seg.setAttribute("aria-label",seg.title);track.append(seg);used.add(id);cells(table,[m.name,(start*s.step).toLocaleString(),((i-1)*s.step).toLocaleString(),name(id)]);start=i;}
+ }
+ for(const id of used){const t=el("span"),sw=el("span",undefined,"swatch");sw.style.background=color(id);t.append(sw,document.createTextNode(name(id)));legend.append(t);}
+}
+$("refresh").onclick=refresh;$("calculate").onclick=run;
+for(const id of ["buy","sell","bzTax","ahTax","fairy","pity","chest","guarantee","lock"])$(id).addEventListener("change",()=>{if(!refreshing)run()});
+$("xp").addEventListener("input",()=>{$("range").value=$("xp").value;renderCurrent()});$("range").addEventListener("input",()=>{$("xp").value=$("range").value;renderCurrent()});
+setInterval(()=>{if($("auto").checked&&!document.hidden&&!worker)refresh()},60000);
+renderPrices();refresh();
+</script></body></html>
